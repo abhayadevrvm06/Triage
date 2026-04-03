@@ -20,7 +20,7 @@ struct Patient {
     string color;
     string waitTime;
 };
-
+// parallel dictionary
 string dictWords[100];
 int dictScores[100];
 int totalDictionaryWords = 0; 
@@ -131,29 +131,30 @@ int findSmallestNumber(int a, int b, int c) {
     int smallest = a;
     if (b < smallest) smallest = b;
     if (c < smallest) smallest = c;
-    return smallest;
+    return smallest;// 
 }
 
 //typo checker (Levenshtein Distance)
+// this is the way to measure how different two words are
 int getTypoDistance(string word1, string word2) {
     int length1 = word1.length();
     int length2 = word2.length();
     
-    int typoGrid[50][50]; 
+    int typoGrid[50][50]; //this creates a matrix where rows represent the first word and columns represent the second word. the code fill this table cell-by-cell. Each cell stores the cost of matching the words upto that point.
     
     for (int row = 0; row <= length1; row++) {
         for (int col = 0; col <= length2; col++) {
             if (row == 0) {
-                typoGrid[row][col] = col;
+                typoGrid[row][col] = col;//if one word is empty, the cost is simply the length of the other word
             }
             else if (col == 0) {
-                typoGrid[row][col] = row;
+                typoGrid[row][col] = row;//same logic
             }
             else if (word1[row - 1] == word2[col - 1]) {
-                typoGrid[row][col] = typoGrid[row - 1][col - 1];
+                typoGrid[row][col] = typoGrid[row - 1][col - 1];//If the letters match perfectly, the cost doesn't go up
             }
             else {
-                typoGrid[row][col] = 1 + findSmallestNumber(
+                typoGrid[row][col] = 1 + findSmallestNumber(//If the letters don't match, we have to perform an "edit." We look at the neighbors (Left, Top, and Diagonal) and pick the cheapest path, then add +1 for the edit we just made.
                     typoGrid[row][col - 1],      
                     typoGrid[row - 1][col],      
                     typoGrid[row - 1][col - 1]   
@@ -161,7 +162,7 @@ int getTypoDistance(string word1, string word2) {
             }
         }
     }
-    return typoGrid[length1][length2]; 
+    return typoGrid[length1][length2]; // after the loop, the last cell in the bottom right corner contains the final cost
 }
 // logic
 void calculatePriority(Patient &p) {
@@ -223,12 +224,12 @@ void calculatePriority(Patient &p) {
         }
     }
     // after a bunch wrong outputs...
-    // high-risk area => double the score regardless of "mild" or any other words
+    // high-risk area ==> double the score regardless of "mild" or any other words
     if (highRiskArea) {
         p.score = p.score * 2; 
     }
 
-    // low-risk area => cut the score in half
+    // low-risk area ==> divide the score by 2
     if (lowRiskArea) {
         p.score = p.score / 2;
     }
@@ -252,11 +253,11 @@ void calculatePriority(Patient &p) {
 }
 // UI (queue)
 void displayDashboard(Patient queue[], int patientCount) {
-    #ifdef _WIN32
-        system("cls");
+    #ifdef _WIN32 //asks the compiler if its mac or windows
+        system("cls");//windows
     #else
-        system("clear");
-    #endif
+        system("clear");//mac
+    #endif // only to clear the console so that it doesnt get messy
     cout << "-------------------------------------------------------------------------" << endl;
     cout << " PATIENT NAME       | AGE | STATUS            | PRIORITY | EST. WAIT  " << endl;
     cout << "-------------------------------------------------------------------------" << endl;
