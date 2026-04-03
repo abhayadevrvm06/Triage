@@ -1,10 +1,9 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
-
 using namespace std;
 
-// Terminal Colors for a nice UI
+//colours
 const string RED = "\033[1;31m";
 const string ORANGE = "\033[1;33m";
 const string YELLOW = "\033[1;33m"; 
@@ -12,10 +11,9 @@ const string GREEN = "\033[1;32m";
 const string BLUE = "\033[1;36m";
 const string RESET = "\033[0m";
 
-// Structure for a single patient
 struct Patient {
     string name;
-    int age;
+    int age;//babies and old people have more priority
     string symptoms;
     int score = 0;
     string category;
@@ -23,14 +21,12 @@ struct Patient {
     string waitTime;
 };
 
-// Parallel Arrays for our Dictionary (Capacity holds up to 100)
 string dictWords[100];
 int dictScores[100];
 int totalDictionaryWords = 0; 
 
-// 1. "Trained" Dictionary (Expanded based on 20,000 patient dataset)
 void setupDictionary() {
-    // INSTANT CRITICAL (100 points = 0 MINS WAIT GUARANTEED)
+    // Instant CRITICAL (100 points = 0 MINS wait guaranteed)
     dictWords[0] = "heart";      dictScores[0] = 100;
     dictWords[1] = "stroke";     dictScores[1] = 100;
     dictWords[2] = "choke";      dictScores[2] = 100;
@@ -100,7 +96,7 @@ void setupDictionary() {
     dictWords[58] = "toe";       dictScores[58] = 10;
     dictWords[59] = "rash";      dictScores[59] = 5;
 
-    // --- NEW CONFUSING SLANG DATASET WORDS ---
+    // confusing slang words 
     dictWords[60] = "ticker";    dictScores[60] = 100; // Heart
     dictWords[61] = "breathing"; dictScores[61] = 80;  // Breath
     dictWords[62] = "peepers";   dictScores[62] = 40;  // Vision
@@ -117,11 +113,10 @@ void setupDictionary() {
     dictWords[73] = "guts";      dictScores[73] = 25;  // Puking guts out
     dictWords[74] = "wiped";     dictScores[74] = 15;  // Fatigue / Faint
     
-    totalDictionaryWords = 75; // Updated total for new entries
-    cout << GREEN << "Loaded internal dictionary trained with " << totalDictionaryWords << " target symptoms." << RESET << endl;
+    totalDictionaryWords = 75;//will print this 
+    cout << GREEN << "Loaded internal dictionary with " << totalDictionaryWords << " target symptoms." << RESET << endl;
 }
 
-// 2. Make string lowercase manually
 string makeLowercase(string sentence) {
     for (int i = 0; i < sentence.length(); i++) {
         if (sentence[i] >= 'A' && sentence[i] <= 'Z') {
@@ -131,7 +126,7 @@ string makeLowercase(string sentence) {
     return sentence;
 }
 
-// Simple minimum finder for the typo math
+//this is used for the Levenshtein Distance function to find the smallest of 3 numbers
 int findSmallestNumber(int a, int b, int c) {
     int smallest = a;
     if (b < smallest) smallest = b;
@@ -139,7 +134,7 @@ int findSmallestNumber(int a, int b, int c) {
     return smallest;
 }
 
-// 3. Typo Checker (Levenshtein Distance)
+//typo checker (Levenshtein Distance)
 int getTypoDistance(string word1, string word2) {
     int length1 = word1.length();
     int length2 = word2.length();
@@ -168,46 +163,42 @@ int getTypoDistance(string word1, string word2) {
     }
     return typoGrid[length1][length2]; 
 }
-
-// 4. Triage Logic Engine
-// 4. IMPROVED Triage Logic Engine (With Location Modifiers)
+// logic
 void calculatePriority(Patient &p) {
     string text = makeLowercase(p.symptoms);
     
-    // Remove basic punctuation
+    // remove punctuation
     string cleanText = "";
     for (int i = 0; i < text.length(); i++) {
         if (text[i] != ',' && text[i] != '.' && text[i] != '!') {
             cleanText += text[i];
         }
     }
-
+    //if these stuff turn true, it will increase or decrease the points
     bool isSevere = false;
     bool isMild = false; 
     bool highRiskArea = false;
     bool lowRiskArea = false;
 
-    // --- NEW: LOCATION CHECKER ---
-    // Check for High Risk Areas (Internal, Chest, Heart, Brain)
+    // checking for specific high risk areas(reduce wait)
     if (text.find("internal") != string::npos || text.find("chest") != string::npos || 
-        text.find("heart") != string::npos || text.find("ticker") != string::npos || 
+        text.find("heart") != string::npos || text.find("brain") != string::npos || 
         text.find("breath") != string::npos) {
         highRiskArea = true;
     }
 
-    // Check for Low Risk Areas (Fingers, Toes, Skin)
+    // Check for Low Risk Areas(will reduce points if the issue is with these ones)
     if (text.find("finger") != string::npos || text.find("toe") != string::npos || 
         text.find("nail") != string::npos || text.find("skin") != string::npos) {
         lowRiskArea = true;
     }
 
-    // --- EXISTING WORD SCANNER ---
     string userWord = "";
     for (int j = 0; j <= cleanText.length(); j++) {
         if (j == cleanText.length() || cleanText[j] == ' ') {
             if (userWord.length() > 0) {
                 
-                // Check for Severity
+                // Check for Severe stuff
                 if (getTypoDistance(userWord, "severe") <= 2 || getTypoDistance(userWord, "extreme") <= 2 || 
                     getTypoDistance(userWord, "killing") <= 1 || getTypoDistance(userWord, "agony") <= 1) {
                     isSevere = true;
@@ -231,48 +222,42 @@ void calculatePriority(Patient &p) {
             userWord += cleanText[j]; 
         }
     }
-
-    // --- THE FIX: SMART MULTIPLIERS ---
-    
-    // 1. If it's a high-risk area (like internal), double the score regardless of "mild"
+    // after a bunch wrong outputs...
+    // high-risk area => double the score regardless of "mild" or any other words
     if (highRiskArea) {
         p.score = p.score * 2; 
     }
 
-    // 2. If it's a low-risk area (like a finger), cut the score in half
+    // low-risk area => cut the score in half
     if (lowRiskArea) {
         p.score = p.score / 2;
     }
 
-    // 3. Apply standard "Severe" multiplier
+    //standard "Severe" multiplier
     if (isSevere) p.score = p.score * 2;
 
-    // 4. Apply "Mild" downgrader ONLY if it's NOT a high-risk area
+    //"Mild" downgrader only if it's NOT a high-risk area
     if (isMild && !highRiskArea) {
         p.score = p.score / 2;
     }
+    // check if age is < 5 or > 65
+    if (p.age < 5 || p.age > 65) p.score += 15;
 
-    // Age vulnerability
-    if (p.age < 5 || p.age > 65) p.score += 15; 
-
-    // Final Category Assignment
+    // wait time and critical status
     if (p.score >= 100) { p.category = "L1: CRITICAL     "; p.color = RED; p.waitTime = "0 MINS"; }
-    else if (p.score >= 70) { p.category = "L2: EMERGENT     "; p.color = ORANGE; p.waitTime = "5-10 MINS"; }
-    else if (p.score >= 40) { p.category = "L3: URGENT       "; p.color = YELLOW; p.waitTime = "15-30 MINS"; }
-    else if (p.score >= 20) { p.category = "L4: LESS URGENT  "; p.color = GREEN; p.waitTime = "30-60 MINS"; }
-    else { p.category = "L5: NON-URGENT   "; p.color = BLUE; p.waitTime = "1-2 HOURS"; }
+    else if (p.score >= 70) { p.category = "L2: EMERGENT     "; p.color = ORANGE; p.waitTime = "2 - 10 MINS"; }
+    else if (p.score >= 40) { p.category = "L3: URGENT       "; p.color = YELLOW; p.waitTime = "20 - 30 MINS"; }
+    else if (p.score >= 20) { p.category = "L4: LESS URGENT  "; p.color = GREEN; p.waitTime = "30 - 45 MINS"; }
+    else { p.category = "L5: NON-URGENT   "; p.color = BLUE; p.waitTime = "45 MIN -  1.5 HOURS"; }
 }
-// 5. User Interface (Dashboard)
+// UI (queue)
 void displayDashboard(Patient queue[], int patientCount) {
     #ifdef _WIN32
         system("cls");
     #else
         system("clear");
     #endif
-
-    cout << BLUE << "=========================================================================" << RESET << endl;
-    cout << "             " << RED << "+ TriageFlow Emergency UI Dashboard +" << RESET << "             " << endl;
-    cout << BLUE << "=========================================================================" << RESET << endl;
+    cout << "-------------------------------------------------------------------------" << endl;
     cout << " PATIENT NAME       | AGE | STATUS            | PRIORITY | EST. WAIT  " << endl;
     cout << "-------------------------------------------------------------------------" << endl;
 
@@ -295,18 +280,15 @@ void displayDashboard(Patient queue[], int patientCount) {
 }
 
 int main() {
-    cout << "Booting System..." << endl;
-    
     setupDictionary(); 
-    
     cout << "\nPress ENTER to launch the Dashboard...";
     string dummy;
-    getline(cin, dummy);
+    getline(cin, dummy);//enter whatever and it will continue
 
     Patient ER_Queue[100];
     int patientCount = 0; 
 
-    string addMore = "y";
+    string addMore = "y"; // if anything else, it will quit
 
     while ((addMore == "y" || addMore == "Y") && patientCount < 100) {
         Patient newPatient;
@@ -344,7 +326,7 @@ int main() {
             cout << "Add another patient? (y/n): ";
             getline(cin, addMore);
         } else {
-            cout << RED << "ER Capacity Reached! Cannot accept more patients." << RESET << endl;
+            cout << RED << "Max Capacity Reached!" << RESET << endl;
             break;
         }
     }
