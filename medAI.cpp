@@ -3,30 +3,22 @@
 #include <iomanip>
 using namespace std;
 
-//colours
-const string RED = "\033[1;31m";
-const string ORANGE = "\033[1;33m";
-const string YELLOW = "\033[1;33m"; 
-const string GREEN = "\033[1;32m";
-const string BLUE = "\033[1;36m";
-const string RESET = "\033[0m";
-
 struct Patient {
     string name;
-    int age;//babies and old people have more priority
+    int age; //babies and old people have more priority
     string symptoms;
     int score = 0;
     string category;
-    string color;
     string waitTime;
 };
-// parallel dictionary
+
+// parallel dictionary(arrays)
 string dictWords[100];
 int dictScores[100];
-int totalDictionaryWords = 0; 
+int totalDictionaryWords = 0; //this variable keeps track of how many symptoms are currently loaded so the loops dont check empty spaces
 
 void setupDictionary() {
-    // Instant CRITICAL (100 points = 0 MINS wait guaranteed)
+    // Instant CRITICAL (100 points = 0 min wait guaranteed)
     dictWords[0] = "heart";      dictScores[0] = 100;
     dictWords[1] = "stroke";     dictScores[1] = 100;
     dictWords[2] = "choke";      dictScores[2] = 100;
@@ -38,14 +30,14 @@ void setupDictionary() {
     dictWords[8] = "shortness";  dictScores[8] = 100; 
     dictWords[9] = "accident";   dictScores[9] = 100; 
 
-    // HIGH TIER (70-90 points = 5-10 MINS WAIT)
+    // HIGH TIER (70-90 points = 2-10 min wait)
     dictWords[10] = "chest";     dictScores[10] = 80; 
     dictWords[11] = "breath";    dictScores[11] = 80;
     dictWords[12] = "trauma";    dictScores[12] = 80;
     dictWords[13] = "bleed";     dictScores[13] = 80; 
     dictWords[14] = "blood";     dictScores[14] = 80; 
     
-    // MID TIER (40-60 points = 15-30 MINS WAIT)
+    // MID TIER (40-60 points = 20-30 min wait)
     dictWords[15] = "faint";     dictScores[15] = 60;
     dictWords[16] = "asthma";    dictScores[16] = 60;
     dictWords[17] = "neck";      dictScores[17] = 50; 
@@ -57,7 +49,7 @@ void setupDictionary() {
     dictWords[23] = "vision";    dictScores[23] = 40;
     dictWords[24] = "blurry";    dictScores[24] = 40; 
 
-    // LOWER MID TIER (25-35 points = 30-60 MINS WAIT)
+    // LOWER MID TIER (25-35 points = 30-45min wait)
     dictWords[25] = "head";      dictScores[25] = 35; 
     dictWords[26] = "headache";  dictScores[26] = 35; 
     dictWords[27] = "migraine";  dictScores[27] = 35; 
@@ -77,7 +69,7 @@ void setupDictionary() {
     dictWords[41] = "nausea";    dictScores[41] = 25; 
     dictWords[42] = "pee";       dictScores[42] = 25; 
 
-    // LOW TIER (5-20 points = 1-2 HOURS WAIT)
+    // LOW TIER (5-20 points = 45 mins to 1.5 hour wait)
     dictWords[43] = "pain";      dictScores[43] = 20;
     dictWords[44] = "back";      dictScores[44] = 20;
     dictWords[45] = "backache";  dictScores[45] = 20; 
@@ -97,24 +89,22 @@ void setupDictionary() {
     dictWords[59] = "rash";      dictScores[59] = 5;
 
     // confusing slang words 
-    dictWords[60] = "ticker";    dictScores[60] = 100; // Heart
-    dictWords[61] = "breathing"; dictScores[61] = 80;  // Breath
+    dictWords[61] = "breathing"; dictScores[61] = 80;  
     dictWords[62] = "peepers";   dictScores[62] = 40;  // Vision
     dictWords[63] = "tingly";    dictScores[63] = 40;  // Numb
     dictWords[64] = "noggin";    dictScores[64] = 35;  // Head
-    dictWords[65] = "fog";       dictScores[65] = 35;  // Brain fog
+    dictWords[65] = "fog";       dictScores[65] = 35;  
     dictWords[66] = "tummy";     dictScores[66] = 35;  // Stomach
-    dictWords[67] = "gut";       dictScores[67] = 35;  // Stomach
     dictWords[68] = "runs";      dictScores[68] = 35;  // Diarrhea
     dictWords[69] = "woozy";     dictScores[69] = 30;  // Dizzy
     dictWords[70] = "spinning";  dictScores[70] = 30;  // Dizzy
-    dictWords[71] = "stars";     dictScores[71] = 30;  // Dizzy/Vision
+    dictWords[71] = "stars";     dictScores[71] = 30;  // Vision
     dictWords[72] = "puking";    dictScores[72] = 25;  // Vomiting
-    dictWords[73] = "guts";      dictScores[73] = 25;  // Puking guts out
-    dictWords[74] = "wiped";     dictScores[74] = 15;  // Fatigue / Faint
+    dictWords[73] = "guts";      dictScores[73] = 25;  
+    dictWords[74] = "wiped";     dictScores[74] = 15;  // Fainted
     
-    totalDictionaryWords = 75;//will print this 
-    cout << GREEN << "Loaded internal dictionary with " << totalDictionaryWords << " target symptoms." << RESET << endl;
+    totalDictionaryWords = 75;
+    cout << "Loaded internal dictionary with " << totalDictionaryWords << " target symptoms." << endl;
 }
 
 string makeLowercase(string sentence) {
@@ -131,7 +121,7 @@ int findSmallestNumber(int a, int b, int c) {
     int smallest = a;
     if (b < smallest) smallest = b;
     if (c < smallest) smallest = c;
-    return smallest;// 
+    return smallest; 
 }
 
 //typo checker (Levenshtein Distance)
@@ -140,7 +130,7 @@ int getTypoDistance(string word1, string word2) {
     int length1 = word1.length();
     int length2 = word2.length();
     
-    int typoGrid[50][50]; //this creates a matrix where rows represent the first word and columns represent the second word. the code fill this table cell-by-cell. Each cell stores the cost of matching the words upto that point.
+    int typoGrid[50][50]; //this creates a matrix where rows represent the first word and columns represent the second word.
     
     for (int row = 0; row <= length1; row++) {
         for (int col = 0; col <= length2; col++) {
@@ -154,7 +144,7 @@ int getTypoDistance(string word1, string word2) {
                 typoGrid[row][col] = typoGrid[row - 1][col - 1];//If the letters match perfectly, the cost doesn't go up
             }
             else {
-                typoGrid[row][col] = 1 + findSmallestNumber(//If the letters don't match, we have to perform an "edit." We look at the neighbors (Left, Top, and Diagonal) and pick the cheapest path, then add +1 for the edit we just made.
+                typoGrid[row][col] = 1 + findSmallestNumber( // pick the cheapest path, then add +1 for the edit
                     typoGrid[row][col - 1],      
                     typoGrid[row - 1][col],      
                     typoGrid[row - 1][col - 1]   
@@ -162,8 +152,9 @@ int getTypoDistance(string word1, string word2) {
             }
         }
     }
-    return typoGrid[length1][length2]; // after the loop, the last cell in the bottom right corner contains the final cost
+    return typoGrid[length1][length2]; // final cost
 }
+
 // logic
 void calculatePriority(Patient &p) {
     string text = makeLowercase(p.symptoms);
@@ -175,24 +166,12 @@ void calculatePriority(Patient &p) {
             cleanText += text[i];
         }
     }
+    
     //if these stuff turn true, it will increase or decrease the points
     bool isSevere = false;
     bool isMild = false; 
     bool highRiskArea = false;
     bool lowRiskArea = false;
-
-    // checking for specific high risk areas(reduce wait)
-    if (text.find("internal") != string::npos || text.find("chest") != string::npos || 
-        text.find("heart") != string::npos || text.find("brain") != string::npos || 
-        text.find("breath") != string::npos) {
-        highRiskArea = true;
-    }
-
-    // Check for Low Risk Areas(will reduce points if the issue is with these ones)
-    if (text.find("finger") != string::npos || text.find("toe") != string::npos || 
-        text.find("nail") != string::npos || text.find("skin") != string::npos) {
-        lowRiskArea = true;
-    }
 
     string userWord = "";
     for (int j = 0; j <= cleanText.length(); j++) {
@@ -210,11 +189,26 @@ void calculatePriority(Patient &p) {
                     isMild = true;
                 }
 
+                // Check for Low Risk Areas
+                if (userWord == "finger" || userWord == "toe" || userWord == "nail" || userWord == "skin") {
+                    lowRiskArea = true;
+                }
+
                 // Match against Dictionary
                 for (int i = 0; i < totalDictionaryWords; i++) {
-                    if (userWord.find(dictWords[i]) != string::npos) { 
+                    // Match if it's exact or if it's a 1-letter typo (only for words longer than 3 letters to prevent accidents)
+                    if (userWord == dictWords[i] || 
+                       (userWord.length() > 3 && getTypoDistance(userWord, dictWords[i]) <= 1)) { 
+                        
                         p.score += dictScores[i];
-                        break; 
+                        
+                        // If the matched word is a high risk area, trigger the multiplier
+                        if (dictWords[i] == "heart" || dictWords[i] == "chest" || 
+                            dictWords[i] == "brain" || dictWords[i] == "breath" || dictWords[i] == "internal") {
+                            highRiskArea = true;
+                        }
+                        
+                        break; // Found the symptom, stop looking in the dictionary
                     }
                 }
                 userWord = ""; 
@@ -223,7 +217,7 @@ void calculatePriority(Patient &p) {
             userWord += cleanText[j]; 
         }
     }
-    // after a bunch wrong outputs...
+    
     // high-risk area ==> double the score regardless of "mild" or any other words
     if (highRiskArea) {
         p.score = p.score * 2; 
@@ -241,23 +235,23 @@ void calculatePriority(Patient &p) {
     if (isMild && !highRiskArea) {
         p.score = p.score / 2;
     }
+    
     // check if age is < 5 or > 65
     if (p.age < 5 || p.age > 65) p.score += 15;
 
     // wait time and critical status
-    if (p.score >= 100) { p.category = "L1: CRITICAL     "; p.color = RED; p.waitTime = "0 MINS"; }
-    else if (p.score >= 70) { p.category = "L2: EMERGENT     "; p.color = ORANGE; p.waitTime = "2 - 10 MINS"; }
-    else if (p.score >= 40) { p.category = "L3: URGENT       "; p.color = YELLOW; p.waitTime = "20 - 30 MINS"; }
-    else if (p.score >= 20) { p.category = "L4: LESS URGENT  "; p.color = GREEN; p.waitTime = "30 - 45 MINS"; }
-    else { p.category = "L5: NON-URGENT   "; p.color = BLUE; p.waitTime = "45 MIN -  1.5 HOURS"; }
+    if (p.score >= 100) { p.category = "L1: CRITICAL     "; p.waitTime = "0 MINS"; }
+    else if (p.score >= 70) { p.category = "L2: EMERGENT     "; p.waitTime = "2 - 10 MINS"; }
+    else if (p.score >= 40) { p.category = "L3: URGENT       "; p.waitTime = "20 - 30 MINS"; }
+    else if (p.score >= 20) { p.category = "L4: LESS URGENT  "; p.waitTime = "30 - 45 MINS"; }
+    else { p.category = "L5: NON-URGENT   "; p.waitTime = "45 MIN -  1.5 HOURS"; }
 }
+
 // UI (queue)
 void displayDashboard(Patient queue[], int patientCount) {
-    #ifdef _WIN32 //asks the compiler if its mac or windows
-        system("cls");//windows
-    #else
-        system("clear");//mac
-    #endif // only to clear the console so that it doesnt get messy
+    
+    system("clear"); //clear the terminal so it looks good
+    
     cout << "-------------------------------------------------------------------------" << endl;
     cout << " PATIENT NAME       | AGE | STATUS            | PRIORITY | EST. WAIT  " << endl;
     cout << "-------------------------------------------------------------------------" << endl;
@@ -273,8 +267,8 @@ void displayDashboard(Patient queue[], int patientCount) {
 
         cout << " " << left << setw(18) << p.name 
              << " | " << setw(3) << p.age
-             << " | " << p.color << p.category << RESET 
-             << " | " << p.color << "P" << pLevel << RESET 
+             << " | " << p.category 
+             << " | " << "P" << pLevel 
              << "       | " << p.waitTime << endl;
     }
     cout << "-------------------------------------------------------------------------\n" << endl;
@@ -282,14 +276,14 @@ void displayDashboard(Patient queue[], int patientCount) {
 
 int main() {
     setupDictionary(); 
-    cout << "\nPress ENTER to launch the Dashboard...";
+    cout << "\nPress ENTER to continue"<<endl;
     string dummy;
-    getline(cin, dummy);//enter whatever and it will continue
+    getline(cin, dummy);
 
     Patient ER_Queue[100];
     int patientCount = 0; 
 
-    string addMore = "y"; // if anything else, it will quit
+    string addMore = "y"; 
 
     while ((addMore == "y" || addMore == "Y") && patientCount < 100) {
         Patient newPatient;
@@ -327,11 +321,11 @@ int main() {
             cout << "Add another patient? (y/n): ";
             getline(cin, addMore);
         } else {
-            cout << RED << "Max Capacity Reached!" << RESET << endl;
+            cout << "Max Capacity Reached!" << endl;
             break;
         }
     }
 
-    cout << GREEN << "\n[SYSTEM LOGOFF] Triage queue finalized." << RESET << endl;
+    cout << "\nTriage queue finalized." << endl;
     return 0;
 }
