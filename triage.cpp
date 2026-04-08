@@ -72,7 +72,7 @@ void setupDictionary() {
     // LOW TIER (5-20 points = 45 mins to 1.5 hour wait)
     dictWords[43] = "pain";      dictScores[43] = 20;
     dictWords[44] = "back";      dictScores[44] = 20;
-    dictWords[45] = "backache";  dictScores[45] = 20; 
+    dictWords[45] = "backpain";  dictScores[45] = 20; 
     dictWords[46] = "throat";    dictScores[46] = 20; 
     dictWords[47] = "joint";     dictScores[47] = 20; 
     dictWords[48] = "knee";      dictScores[48] = 15;
@@ -103,8 +103,7 @@ void setupDictionary() {
     dictWords[73] = "guts";      dictScores[73] = 25;  
     dictWords[74] = "wiped";     dictScores[74] = 15;  // Fainted
     
-    totalDictionaryWords = 75;
-    cout << "Loaded internal dictionary with " << totalDictionaryWords << " target symptoms." << endl;
+    totalDictionaryWords = 75; // CRITICAL FIX: Restored this so the loops run!
 }
 
 string makeLowercase(string sentence) {
@@ -179,7 +178,7 @@ void calculatePriority(Patient &p) {
             if (userWord.length() > 0) {
                 
                 // Check for Severe stuff
-                if (getTypoDistance(userWord, "severe") <= 2 || getTypoDistance(userWord, "extreme") <= 2 || 
+                if (getTypoDistance(userWord, "severe") <= 1 || getTypoDistance(userWord, "extreme") <= 1 || 
                     getTypoDistance(userWord, "killing") <= 1 || getTypoDistance(userWord, "agony") <= 1) {
                     isSevere = true;
                 }
@@ -196,25 +195,25 @@ void calculatePriority(Patient &p) {
 
                 // Match against Dictionary
                 for (int i = 0; i < totalDictionaryWords; i++) {
-                    // Match if it's exact or if it's a 1-letter typo (only for words longer than 3 letters to prevent accidents)
+                    // Match if it's exact OR if it's a 1-letter typo (for words > 3 letters)
                     if (userWord == dictWords[i] || 
-                       (userWord.length() > 3 && getTypoDistance(userWord, dictWords[i]) <= 1)) { 
+                       (userWord.length() > 4 && getTypoDistance(userWord, dictWords[i]) <= 1)) { 
                         
                         p.score += dictScores[i];
                         
-                        // If the matched word is a high risk area, trigger the multiplier
+                        // Check if the matched word is a high-risk area
                         if (dictWords[i] == "heart" || dictWords[i] == "chest" || 
                             dictWords[i] == "brain" || dictWords[i] == "breath" || dictWords[i] == "internal") {
                             highRiskArea = true;
                         }
                         
-                        break; // Found the symptom, stop looking in the dictionary
+                        break; // Stop looking once a match is found
                     }
                 }
-                userWord = ""; 
+                userWord = ""; // Clear the word to start building the next one
             }
         } else {
-            userWord += cleanText[j]; 
+            userWord += cleanText[j];
         }
     }
     
@@ -249,9 +248,6 @@ void calculatePriority(Patient &p) {
 
 // UI (queue)
 void displayDashboard(Patient queue[], int patientCount) {
-    
-    system("clear"); //clear the terminal so it looks good
-    
     cout << "-------------------------------------------------------------------------" << endl;
     cout << " PATIENT NAME       | AGE | STATUS            | PRIORITY | EST. WAIT  " << endl;
     cout << "-------------------------------------------------------------------------" << endl;
@@ -276,7 +272,7 @@ void displayDashboard(Patient queue[], int patientCount) {
 
 int main() {
     setupDictionary(); 
-    cout << "\nPress ENTER to continue"<<endl;
+    cout << "\nPress ENTER to continue";
     string dummy;
     getline(cin, dummy);
 
